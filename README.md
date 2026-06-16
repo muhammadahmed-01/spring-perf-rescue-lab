@@ -82,7 +82,6 @@ List<Order> findAllOrdersWithItemsAndUser();
 
 | Resource | Path |
 |----------|------|
-| Portfolio preview (screenshots) | [docs/portfolio-preview.html](docs/portfolio-preview.html) |
 | EXPLAIN ANALYZE walkthrough | [docs/explain-analyze.md](docs/explain-analyze.md) |
 | Sample audit report (filled) | [docs/audit-report-template.md](docs/audit-report-template.md) |
 | Sample Phase 1 audit SOW | [docs/PHASE-1-AUDIT-SOW.md](docs/PHASE-1-AUDIT-SOW.md) |
