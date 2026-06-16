@@ -8,7 +8,7 @@ Use this on day one of a Spring Boot + PostgreSQL performance investigation. Eac
 
 | Step | Action | Case study equivalent |
 |------|--------|------------------------|
-| 1 | Record symptom: which endpoint, p95/p99, when it started, traffic level | README problem section: `GET /api/orders`, p95 1,617 ms under 100k requests |
+| 1 | Record symptom: which endpoint, p95/p99, when it started, traffic level | README problem section: `GET /api/orders`, p95 1,605 ms under 100k requests |
 | 2 | Check recent deploys, config changes, migration scripts | Case study seeds fixed data; production needs deploy log |
 | 3 | Hit endpoint once with curl; note response time and payload size | `curl http://localhost:8080/api/orders/buggy` |
 | 4 | Capture response headers if app exposes query metrics | `X-Query-Count: 111` on buggy path |

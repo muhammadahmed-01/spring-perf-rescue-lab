@@ -78,6 +78,6 @@ The audit is complete when these questions have evidence-backed answers: how slo
 
 ## Reference Case Study
 
-This SOW reflects the investigation path used in [spring-perf-rescue-lab](https://github.com/muhammadahmed-01/spring-perf-rescue-lab): 111 queries to 1, p95 1,617 ms to 52 ms under 100k k6 requests on an N+1 orders list. Production audits follow the same sequence at larger scale.
+This SOW reflects the investigation path used in [spring-perf-rescue-lab](https://github.com/muhammadahmed-01/spring-perf-rescue-lab): 111 queries to 1, p95 1,605 ms to 760 ms under 100,000 k6 requests (100 VUs) on an N+1 orders list. Production audits follow the same sequence at larger scale.
 
 **Sample audit report:** [docs/audit-report-template.md](audit-report-template.md)
