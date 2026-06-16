@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Spring Boot Performance Case Study - Portfolio Preview</title>
+  <title>Spring Boot N+1 Performance Case Study</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -77,7 +77,7 @@
 <body>
   <div class="wrap">
     <h1>111 SQL Queries Per Request to 1</h1>
-    <p class="subtitle">Production-proven Spring Boot + PostgreSQL performance case study. Measured root cause (Hibernate N+1), minimal fix (JOIN FETCH), and before/after proof under load. Same failure class resolved at Careem: p99 ~8s to under 1s.</p>
+    <p class="subtitle">Spring Boot + PostgreSQL performance case study. Hibernate N+1 root cause, JOIN FETCH fix, and before/after proof under 100,000 k6 requests. Same failure class resolved at Careem: p99 ~8s to under 1s.</p>
 
     <div class="metrics">
       <div class="metric">
@@ -86,19 +86,19 @@
       </div>
       <div class="metric">
         <label>k6 p95 latency</label>
-        <div class="vals"><span class="buggy">134 ms</span><span class="arrow">→</span><span class="fixed">17 ms</span></div>
+        <div class="vals"><span class="buggy">1,605 ms</span><span class="arrow">→</span><span class="fixed">696 ms</span></div>
       </div>
       <div class="metric">
         <label>Throughput</label>
-        <div class="vals"><span class="buggy">62 req/s</span><span class="arrow">→</span><span class="fixed">89 req/s</span></div>
+        <div class="vals"><span class="buggy">115 req/s</span><span class="arrow">→</span><span class="fixed">213 req/s</span></div>
       </div>
       <div class="metric">
-        <label>Careem production (reference)</label>
-        <div class="vals"><span class="buggy">1286 q</span><span class="arrow">→</span><span class="fixed">2</span></div>
+        <label>Total k6 requests</label>
+        <div class="vals"><span class="fixed">100,000</span><span class="arrow">per endpoint</span></div>
       </div>
     </div>
 
-    <h2>Root cause proof (query count)</h2>
+    <h2>Root cause (query count)</h2>
     <figure>
       <img src="images/query-count-comparison.png" alt="Query count comparison" />
       <figcaption>X-Query-Count header: 111 hidden SELECTs per request vs 1 after JOIN FETCH fix</figcaption>
@@ -108,15 +108,15 @@
     <div class="grid">
       <figure>
         <img src="images/k6-buggy-results.png" alt="k6 buggy results" />
-        <figcaption>Before fix: p95 134 ms, 10 VUs, 30s</figcaption>
+        <figcaption>Before fix: buggy endpoint under 100k request load profile</figcaption>
       </figure>
       <figure>
         <img src="images/k6-fixed-results.png" alt="k6 fixed results" />
-        <figcaption>After fix: p95 17 ms, identical load profile</figcaption>
+        <figcaption>After fix: identical load profile</figcaption>
       </figure>
     </div>
 
-    <h2>EXPLAIN ANALYZE (why it was slow)</h2>
+    <h2>EXPLAIN ANALYZE</h2>
     <div class="grid">
       <figure>
         <img src="images/explain-buggy.png" alt="EXPLAIN buggy" />
@@ -137,13 +137,11 @@
     <h2>Full metrics comparison</h2>
     <figure>
       <img src="images/metrics-comparison.png" alt="Metrics comparison chart" />
-      <figcaption>Before/after: queries, p95, throughput (measured Jun 16, 2026)</figcaption>
+      <figcaption>Before/after: queries, p95, throughput (measured Jun 2026)</figcaption>
     </figure>
 
     <div class="footer">
-      Muhammad Ahmed · Audit-ready portfolio case study · Measured Jun 16, 2026 ·
-      <a href="../PORTFOLIO-ASSETS.md">Portfolio pack</a> ·
-      <a href="../README.md">README</a>
+      Muhammad Ahmed · <a href="../README.md">README</a> · <a href="audit-report-template.md">Sample audit report</a>
     </div>
   </div>
 </body>

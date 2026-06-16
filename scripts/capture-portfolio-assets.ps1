@@ -1,14 +1,17 @@
 #!/usr/bin/env pwsh
-# Capture portfolio assets: k6 runs, EXPLAIN output, query counts, PNG images.
+# Capture benchmark assets: k6 runs, EXPLAIN output, query counts, PNG images.
 param(
     [string]$BaseUrl = "http://localhost:8080",
-    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot)
+    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
+    [int]$Vus = 100,
+    [int]$Iterations = 100000,
+    [string]$MaxDuration = "15m"
 )
 
 $ErrorActionPreference = "Stop"
 $imagesDir = Join-Path $ProjectRoot "docs/images"
 $rawDir = Join-Path $imagesDir "raw"
-New-Item -ItemType Directory -Force -Path $imagesDir, $rawDir | Out-Null
+New-Item -ItemType Directory -Force -Path $imagesDir, $rawDir, (Join-Path $ProjectRoot "load/results") | Out-Null
 
 Write-Host "Waiting for $BaseUrl/actuator/health ..."
 for ($i = 1; $i -le 90; $i++) {
@@ -19,7 +22,10 @@ for ($i = 1; $i -le 90; $i++) {
     Start-Sleep -Seconds 2
 }
 
-# Query counts
+Write-Host "Warmup (500 requests on fixed path)..."
+k6 run -e BASE_URL=$BaseUrl -e ENDPOINT=/api/orders/fixed -e MODE=warmup `
+  -e VUS=25 -e ITERATIONS=500 -e MAX_DURATION=2m (Join-Path $ProjectRoot "load/k6-load.js") | Out-Null
+
 Write-Host "`n=== Query counts ==="
 $buggyStats = Invoke-RestMethod -Uri "$BaseUrl/api/orders/stats/buggy"
 $fixedStats = Invoke-RestMethod -Uri "$BaseUrl/api/orders/stats/fixed"
@@ -28,19 +34,21 @@ $fixedStats | ConvertTo-Json | Set-Content (Join-Path $rawDir "query-stats-fixed
 Write-Host "Buggy: $($buggyStats.queryCount) queries"
 Write-Host "Fixed: $($fixedStats.queryCount) queries"
 
-# k6 runs
 $k6 = Get-Command k6 -ErrorAction SilentlyContinue
 if ($k6) {
-    Write-Host "`n=== k6 buggy ==="
-    k6 run -e BASE_URL=$BaseUrl -e ENDPOINT=/api/orders/buggy -e MODE=buggy -e VUS=10 -e DURATION=30s (Join-Path $ProjectRoot "load/k6-load.js") 2>&1 | Tee-Object (Join-Path $rawDir "k6-buggy.txt")
+    Write-Host "`n=== k6 buggy ($Iterations requests, $Vus VUs) ==="
+    k6 run -e BASE_URL=$BaseUrl -e ENDPOINT=/api/orders/buggy -e MODE=buggy `
+      -e VUS=$Vus -e ITERATIONS=$Iterations -e MAX_DURATION=$MaxDuration `
+      (Join-Path $ProjectRoot "load/k6-load.js") 2>&1 | Tee-Object (Join-Path $rawDir "k6-buggy.txt")
 
-    Write-Host "`n=== k6 fixed ==="
-    k6 run -e BASE_URL=$BaseUrl -e ENDPOINT=/api/orders/fixed -e MODE=fixed -e VUS=10 -e DURATION=30s (Join-Path $ProjectRoot "load/k6-load.js") 2>&1 | Tee-Object (Join-Path $rawDir "k6-fixed.txt")
+    Write-Host "`n=== k6 fixed ($Iterations requests, $Vus VUs) ==="
+    k6 run -e BASE_URL=$BaseUrl -e ENDPOINT=/api/orders/fixed -e MODE=fixed `
+      -e VUS=$Vus -e ITERATIONS=$Iterations -e MAX_DURATION=$MaxDuration `
+      (Join-Path $ProjectRoot "load/k6-load.js") 2>&1 | Tee-Object (Join-Path $rawDir "k6-fixed.txt")
 } else {
-    Write-Host "k6 not found; skipping load tests. Install: choco install k6"
+    Write-Host "k6 not found; skipping load tests."
 }
 
-# EXPLAIN via docker postgres
 Write-Host "`n=== EXPLAIN ANALYZE ==="
 $explainBuggy = @"
 EXPLAIN ANALYZE SELECT * FROM order_items WHERE order_id = 1;
@@ -67,7 +75,6 @@ try {
     Write-Host "Docker EXPLAIN failed: $_"
 }
 
-# Generate PNGs from raw text
 $pyScript = Join-Path $PSScriptRoot "generate-portfolio-images.py"
 if (Test-Path $pyScript) {
     Write-Host "`n=== Generating PNG images ==="

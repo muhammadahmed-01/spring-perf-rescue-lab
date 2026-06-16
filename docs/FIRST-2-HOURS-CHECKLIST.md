@@ -1,6 +1,6 @@
-# First 2 Hours Checklist: Real Client Performance Investigation
+# Performance Investigation Checklist
 
-Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to something documented in `spring-perf-rescue-lab`.
+Use this on day one of a Spring Boot + PostgreSQL performance investigation. Each step maps to something documented in `spring-perf-rescue-lab`.
 
 ---
 
@@ -8,7 +8,7 @@ Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to some
 
 | Step | Action | Case study equivalent |
 |------|--------|------------------------|
-| 1 | Record symptom: which endpoint, p95/p99, when it started, traffic level | README problem section: `GET /api/orders`, p95 134 ms |
+| 1 | Record symptom: which endpoint, p95/p99, when it started, traffic level | README problem section: `GET /api/orders`, p95 1,617 ms under 100k requests |
 | 2 | Check recent deploys, config changes, migration scripts | Case study seeds fixed data; production needs deploy log |
 | 3 | Hit endpoint once with curl; note response time and payload size | `curl http://localhost:8080/api/orders/buggy` |
 | 4 | Capture response headers if app exposes query metrics | `X-Query-Count: 111` on buggy path |
@@ -34,7 +34,7 @@ Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to some
 
 ---
 
-## Quick Commands (Copy for Client Staging)
+## Quick Commands (Staging)
 
 ```bash
 # Health
@@ -69,14 +69,14 @@ This case study intentionally isolates **ORM N+1** so you can recognize it fast.
 
 ---
 
-## Case Study Mapping Summary
+## Case Study Mapping
 
-| Real client step | Case study file / endpoint |
-|------------------|----------------------------|
+| Investigation step | Case study file / endpoint |
+|--------------------|----------------------------|
 | Buggy hot path | `GET /api/orders/buggy` |
 | Fixed hot path | `GET /api/orders/fixed` |
 | Query count proof | `GET /api/orders/stats/*`, header `X-Query-Count` |
 | Load test baseline | `load/k6-load.js`, `scripts/run-benchmark.ps1` |
 | EXPLAIN walkthrough | `docs/explain-analyze.md` |
-| Client deliverable | `docs/audit-report-template.md` |
-| Proposal scope | `docs/PHASE-1-AUDIT-SOW.md` |
+| Sample audit report | `docs/audit-report-template.md` |
+| Sample audit SOW | `docs/PHASE-1-AUDIT-SOW.md` |

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Generate portfolio PNG images from captured benchmark text and metrics."""
+"""Generate portfolio PNG images from benchmark JSON and captured text."""
 
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -16,12 +15,22 @@ except ImportError:
     from PIL import Image, ImageDraw, ImageFont
 
 
-def load_font(size: int):
-    candidates = [
-        "C:/Windows/Fonts/Consola.ttf",
-        "C:/Windows/Fonts/cour.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-    ]
+def load_font(size: int, mono: bool = False):
+    if mono:
+        candidates = [
+            os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/JetBrainsMono-Regular.ttf"),
+            "C:/Windows/Fonts/jetbrainsmono-regular.ttf",
+            "C:/Windows/Fonts/consola.ttf",
+            "C:/Windows/Fonts/cour.ttf",
+            "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        ]
+    else:
+        candidates = [
+            "C:/Windows/Fonts/segoeui.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ]
     for path in candidates:
         if os.path.exists(path):
             return ImageFont.truetype(path, size)
@@ -29,8 +38,8 @@ def load_font(size: int):
 
 
 def text_image(lines: list[str], title: str, out_path: Path, width: int = 1100):
-    font = load_font(14)
-    title_font = load_font(18)
+    font = load_font(14, mono=True)
+    title_font = load_font(18, mono=False)
     line_height = 20
     padding = 24
     height = padding * 2 + 30 + len(lines) * line_height
@@ -45,72 +54,83 @@ def text_image(lines: list[str], title: str, out_path: Path, width: int = 1100):
     print(f"Wrote {out_path}")
 
 
-def extract_k6_summary(text: str) -> dict:
-    match = re.search(r"\{[\s\S]*?\}", text)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-    return {}
+def k6_results_card(summary: dict, title: str, out_path: Path, accent: tuple[int, int, int]):
+    width, height = 920, 520
+    bg = (248, 249, 252)
+    card = (255, 255, 255)
+    border = (220, 224, 230)
+    muted = (100, 110, 125)
+    text = (30, 35, 45)
 
+    img = Image.new("RGB", (width, height), color=bg)
+    draw = ImageDraw.Draw(img)
 
-def k6_terminal_image(raw_text: str, title: str, out_path: Path):
-    summary = extract_k6_summary(raw_text)
-    header = [
-        "          /\\      |‾‾| /‾‾/   /‾‾/",
-        "     /\\  /  \\     |  |/  /   /  /",
-        "    /  \\/    \\    |     (   /   ‾‾\\",
-        "   /          \\   |  |\\  \\ |  (‾)  |",
-        "  / __________ \\  |__| \\__\\ \\_____/ .io",
-        "",
-        f"  scenario: load  |  mode: {summary.get('mode', '?')}",
-        f"  endpoint: {summary.get('endpoint', '?')}",
-        "",
+    title_font = load_font(22, mono=False)
+    label_font = load_font(13, mono=False)
+    value_font = load_font(36, mono=True)
+    sub_font = load_font(14, mono=True)
+    badge_font = load_font(12, mono=False)
+
+    draw.rounded_rectangle((32, 28, width - 32, height - 28), radius=16, fill=card, outline=border, width=1)
+    draw.rectangle((32, 28, width - 32, 34), fill=accent)
+
+    draw.text((52, 48), title, fill=text, font=title_font)
+    endpoint = summary.get("endpoint", "?")
+    draw.text((52, 82), endpoint, fill=muted, font=sub_font)
+
+    badge = f"{summary.get('vus', '?')} VUs  |  {summary.get('total_requests', summary.get('iterations', '?')):,} requests"
+    draw.rounded_rectangle((52, 108, 52 + 16 * len(badge) // 2 + 120, 132), radius=8, fill=(240, 243, 248))
+    draw.text((64, 112), badge, fill=muted, font=badge_font)
+
+    metrics = [
+        ("Total requests", f"{summary.get('total_requests', summary.get('iterations', 0)):,}"),
+        ("p95 latency", f"{summary.get('p95_ms', '?')} ms"),
+        ("avg latency", f"{summary.get('avg_ms', '?')} ms"),
+        ("throughput", f"{summary.get('rps', '?')} req/s"),
+        ("error rate", f"{summary.get('error_rate_pct', summary.get('error_rate', 0))}%"),
     ]
-    metrics = []
-    if summary:
-        metrics = [
-            "  THRESHOLDS",
-            "    http_req_duration",
-            f"    ✓ 'p(95)<5000'",
-            "",
-            "  HTTP",
-            f"    http_req_duration........: avg={summary.get('avg_ms', '?')}ms  p(95)={summary.get('p95_ms', '?')}ms",
-            f"    http_reqs................: {summary.get('rps', '?')} req/s",
-            "",
-            "  summary JSON:",
-            f"  {json.dumps(summary)}",
-        ]
-    else:
-        metrics = raw_text.splitlines()[-25:]
 
-    text_image(header + metrics, title, out_path)
+    x0, y0 = 52, 160
+    col_w = (width - 104 - 24) // 2
+    for i, (label, value) in enumerate(metrics):
+        col = i % 2
+        row = i // 2
+        x = x0 + col * (col_w + 24)
+        y = y0 + row * 88
+        draw.rounded_rectangle((x, y, x + col_w, y + 72), radius=10, fill=(245, 247, 250), outline=border)
+        draw.text((x + 16, y + 12), label.upper(), fill=muted, font=label_font)
+        draw.text((x + 16, y + 32), str(value), fill=accent if i == 1 else text, font=value_font if i < 3 else sub_font)
+
+    ts = summary.get("timestamp", "")
+    if ts:
+        draw.text((52, height - 58), f"Measured {ts[:10]}", fill=muted, font=badge_font)
+
+    draw.text((52, height - 38), "k6 shared-iterations load test", fill=muted, font=badge_font)
+    img.save(out_path)
+    print(f"Wrote {out_path}")
 
 
 def comparison_image(buggy: dict, fixed: dict, out_path: Path):
     width, height = 900, 420
     img = Image.new("RGB", (width, height), color=(245, 247, 250))
     draw = ImageDraw.Draw(img)
-    title_font = load_font(20)
-    label_font = load_font(16)
-    value_font = load_font(28)
+    title_font = load_font(20, mono=False)
+    label_font = load_font(16, mono=False)
+    value_font = load_font(28, mono=True)
 
     draw.text((40, 24), "SQL Queries per Request (measured)", fill=(30, 30, 30), font=title_font)
 
-    # Buggy box
     draw.rounded_rectangle((40, 80, 420, 360), radius=12, fill=(255, 235, 235), outline=(220, 80, 80))
     draw.text((60, 100), "BUGGY (N+1 lazy load)", fill=(180, 40, 40), font=label_font)
     draw.text((60, 160), str(buggy.get("queryCount", 111)), fill=(200, 50, 50), font=value_font)
     draw.text((60, 220), "queries / request", fill=(120, 60, 60), font=label_font)
-    draw.text((60, 280), f"p95: {buggy.get('p95_ms', 134)} ms", fill=(120, 60, 60), font=label_font)
+    draw.text((60, 280), f"p95: {buggy.get('p95_ms', '?')} ms", fill=(120, 60, 60), font=label_font)
 
-    # Fixed box
     draw.rounded_rectangle((480, 80, 860, 360), radius=12, fill=(230, 245, 235), outline=(60, 140, 80))
     draw.text((500, 100), "FIXED (JOIN FETCH)", fill=(40, 120, 60), font=label_font)
     draw.text((500, 160), str(fixed.get("queryCount", 1)), fill=(40, 140, 70), font=value_font)
     draw.text((500, 220), "queries / request", fill=(60, 100, 70), font=label_font)
-    draw.text((500, 280), f"p95: {fixed.get('p95_ms', 43)} ms", fill=(60, 100, 70), font=label_font)
+    draw.text((500, 280), f"p95: {fixed.get('p95_ms', '?')} ms", fill=(60, 100, 70), font=label_font)
 
     img.save(out_path)
     print(f"Wrote {out_path}")
@@ -120,20 +140,20 @@ def metrics_bar_chart(buggy: dict, fixed: dict, out_path: Path):
     width, height = 800, 500
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
-    font = load_font(14)
-    title_font = load_font(18)
+    font = load_font(14, mono=False)
+    title_font = load_font(18, mono=False)
 
-    draw.text((40, 20), "Before / After Metrics (measured Jun 16, 2026)", fill=(30, 30, 30), font=title_font)
+    draw.text((40, 20), "Before / After Metrics (measured Jun 2026)", fill=(30, 30, 30), font=title_font)
 
     metrics = [
         ("Queries / req", buggy.get("queryCount", 111), fixed.get("queryCount", 1)),
-        ("p95 latency (ms)", buggy.get("p95_ms", 134), fixed.get("p95_ms", 17)),
-        ("Throughput (req/s)", buggy.get("rps", 55), fixed.get("rps", 83)),
+        ("p95 latency (ms)", buggy.get("p95_ms", 0), fixed.get("p95_ms", 0)),
+        ("Throughput (req/s)", buggy.get("rps", 0), fixed.get("rps", 0)),
     ]
 
     chart_left, chart_bottom = 120, 420
     chart_width = 500
-    max_bar = max(m[1] for m in metrics) * 1.1
+    max_bar = max(m[1] for m in metrics) * 1.1 or 1
 
     y = 70
     for label, b_val, f_val in metrics:
@@ -152,13 +172,13 @@ def metrics_bar_chart(buggy: dict, fixed: dict, out_path: Path):
     print(f"Wrote {out_path}")
 
 
-def architecture_diagram(out_path: Path):
+def architecture_diagram(buggy: dict, fixed: dict, out_path: Path):
     width, height = 1000, 520
     img = Image.new("RGB", (width, height), color=(248, 249, 252))
     draw = ImageDraw.Draw(img)
-    font = load_font(14)
-    title_font = load_font(18)
-    box_font = load_font(15)
+    font = load_font(14, mono=False)
+    title_font = load_font(18, mono=False)
+    box_font = load_font(15, mono=False)
 
     draw.text((40, 20), "Request Flow: N+1 vs JOIN FETCH", fill=(30, 30, 30), font=title_font)
 
@@ -171,7 +191,6 @@ def architecture_diagram(out_path: Path):
         draw.line((x1, y1, x2, y2), fill=color, width=2)
         draw.polygon([(x2, y2), (x2 - 8, y2 - 4), (x2 - 8, y2 + 4)], fill=color)
 
-    # Buggy path (top)
     draw.text((40, 55), "BUGGY", fill=(180, 50, 50), font=font)
     box(40, 80, 100, 50, "Client\n(k6)", "#e8eaf0", "#888")
     box(200, 80, 140, 50, "Spring Boot\n/buggy", "#ffe8e8", "#c44")
@@ -180,12 +199,9 @@ def architecture_diagram(out_path: Path):
     arrow(140, 105, 200, 105, "#888")
     arrow(340, 105, 400, 105, "#c44")
     arrow(520, 105, 580, 105, "#c44")
-
-  # Loop annotation
     draw.arc((395, 130, 555, 200), 0, 180, fill=(200, 60, 60), width=2)
     draw.text((420, 175), "100x item SELECTs", fill=(180, 50, 50), font=font)
 
-    # Fixed path (bottom)
     draw.text((40, 280), "FIXED", fill=(40, 120, 60), font=font)
     box(40, 305, 100, 50, "Client\n(k6)", "#e8eaf0", "#888")
     box(200, 305, 140, 50, "Spring Boot\n/fixed", "#e8f5e9", "#4a8")
@@ -195,7 +211,11 @@ def architecture_diagram(out_path: Path):
     arrow(340, 330, 400, 330, "#4a8")
     arrow(560, 330, 620, 330, "#4a8")
 
-    draw.text((40, 450), "Measured: 111 queries / 134 ms p95  ->  1 query / 17 ms p95", fill=(60, 60, 60), font=font)
+    footer = (
+        f"Measured: {buggy.get('queryCount', 111)} queries / {buggy.get('p95_ms', '?')} ms p95"
+        f"  ->  {fixed.get('queryCount', 1)} query / {fixed.get('p95_ms', '?')} ms p95"
+    )
+    draw.text((40, 450), footer, fill=(60, 60, 60), font=font)
     img.save(out_path)
     print(f"Wrote {out_path}")
 
@@ -206,7 +226,6 @@ def main():
     raw = images / "raw"
     images.mkdir(parents=True, exist_ok=True)
 
-    # Load stats
     buggy_stats = {}
     fixed_stats = {}
     if (raw / "query-stats-buggy.json").exists():
@@ -214,25 +233,29 @@ def main():
     if (raw / "query-stats-fixed.json").exists():
         fixed_stats = json.loads((raw / "query-stats-fixed.json").read_text())
 
-    # Load k6 summaries
     buggy_k6_path = root / "load" / "results" / "buggy-summary.json"
     fixed_k6_path = root / "load" / "results" / "fixed-summary.json"
     buggy_k6 = json.loads(buggy_k6_path.read_text()) if buggy_k6_path.exists() else {}
     fixed_k6 = json.loads(fixed_k6_path.read_text()) if fixed_k6_path.exists() else {}
 
-    buggy_stats["p95_ms"] = buggy_k6.get("p95_ms", 134)
-    buggy_stats["rps"] = buggy_k6.get("rps", 62.2)
-    fixed_stats["p95_ms"] = fixed_k6.get("p95_ms", 17)
-    fixed_stats["rps"] = fixed_k6.get("rps", 89.3)
+    for k6, stats in ((buggy_k6, buggy_stats), (fixed_k6, fixed_stats)):
+        if k6:
+            stats["p95_ms"] = k6.get("p95_ms")
+            stats["rps"] = k6.get("rps")
 
-    # k6 terminal images
-    k6_buggy_raw = (raw / "k6-buggy.txt").read_text(encoding="utf-8", errors="replace") if (raw / "k6-buggy.txt").exists() else json.dumps(buggy_k6, indent=2)
-    k6_fixed_raw = (raw / "k6-fixed.txt").read_text(encoding="utf-8", errors="replace") if (raw / "k6-fixed.txt").exists() else json.dumps(fixed_k6, indent=2)
+    k6_results_card(
+        buggy_k6,
+        "k6 Load Test: Before Fix",
+        images / "k6-buggy-results.png",
+        accent=(200, 60, 60),
+    )
+    k6_results_card(
+        fixed_k6,
+        "k6 Load Test: After Fix",
+        images / "k6-fixed-results.png",
+        accent=(40, 140, 80),
+    )
 
-    k6_terminal_image(k6_buggy_raw, "k6 Load Test: Buggy Endpoint (/api/orders/buggy)", images / "k6-buggy-results.png")
-    k6_terminal_image(k6_fixed_raw, "k6 Load Test: Fixed Endpoint (/api/orders/fixed)", images / "k6-fixed-results.png")
-
-    # EXPLAIN images
     if (raw / "explain-buggy.txt").exists():
         lines = (raw / "explain-buggy.txt").read_text(encoding="utf-8", errors="replace").splitlines()
         text_image(lines, "EXPLAIN ANALYZE: N+1 item fetch (per order)", images / "explain-buggy.png")
@@ -242,7 +265,7 @@ def main():
 
     comparison_image(buggy_stats, fixed_stats, images / "query-count-comparison.png")
     metrics_bar_chart(buggy_stats, fixed_stats, images / "metrics-comparison.png")
-    architecture_diagram(images / "architecture-diagram.png")
+    architecture_diagram(buggy_stats, fixed_stats, images / "architecture-diagram.png")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/perf_lab
     username: perf
     password: perf
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
   jpa:
     hibernate:
       ddl-auto: update
