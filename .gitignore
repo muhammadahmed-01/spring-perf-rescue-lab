@@ -7,9 +7,7 @@ target/
 .DS_Store
 load/results/
 
-# Local-only portfolio ops (not for public repo)
-UPWORK-BLURB.md
-PORTFOLIO-ASSETS.md
+# Local-only (not for public repo)
 docs/CAREEM-WAR-STORY.md
 docs/images/README.md
 local/

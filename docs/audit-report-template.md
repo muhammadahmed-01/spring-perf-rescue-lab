@@ -18,7 +18,7 @@
 
 ## Executive Summary
 
-**Bottom line:** The orders listing endpoint is executing 111 SQL statements per request due to a Hibernate N+1 SELECT pattern. Under 100,000 k6 requests (100 VUs), this drives p95 latency to 1,605 ms and limits throughput to 115 req/s. A single JOIN FETCH on the hot read path reduces the query count to 1, cuts p95 to 760 ms (2.1x improvement), and raises throughput to 198 req/s on the same hardware.
+**Bottom line:** The orders listing endpoint is executing 111 SQL statements per request due to a Hibernate N+1 SELECT pattern. Under 100,000 k6 requests (100 VUs), this drives p95 latency to 1,605 ms and limits throughput to 115 req/s. A single JOIN FETCH on the hot read path reduces the query count to 1, cuts p95 to 696 ms (2.3x improvement), and raises throughput to 213 req/s on the same hardware.
 
 **Business impact:** Every page load on this endpoint amplifies database load linearly with order count. At production traffic, this pattern causes connection pool pressure, unpredictable p99 spikes, and wasted infrastructure spend on queries that should never fire. The fix is low effort (one repository method) with high impact.
 
@@ -36,7 +36,7 @@
 | F-2 | Query count | Buggy path executes 111 SELECTs (1 + 100 + 10) | `GET /api/orders/stats/buggy`, `X-Query-Count: 111` |
 | F-3 | Query plan | Buggy item fetch scans `order_items` with a filter per order | `docs/explain-analyze.md` |
 | F-4 | Fixed path | Single DISTINCT query with JOIN FETCH loads orders, users, and items | `OrderRepository.findAllOrdersWithItemsAndUser` |
-| F-5 | Latency | k6 p95 improved 1,605 ms to 760 ms under 100k requests | `load/k6-load.js`, see README metrics table |
+| F-5 | Latency | k6 p95 improved 1,605 ms to 696 ms under 100k requests | `load/k6-load.js`, see README metrics table |
 
 ---
 

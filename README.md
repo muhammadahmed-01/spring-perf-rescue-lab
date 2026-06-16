@@ -13,8 +13,8 @@ Load test: k6 `shared-iterations`, 100 VUs, 100,000 HTTP requests per endpoint, 
 | Mode | SQL queries / request | Total requests | k6 p95 (ms) | k6 avg (ms) | Throughput (req/s) | Error rate |
 |------|----------------------|----------------|-------------|-------------|-------------------|------------|
 | **Before** (`/api/orders/buggy`) | 111 | 100,000 | **1,605** | 868 | 115.2 | 0% |
-| **After** (`/api/orders/fixed`) | 1 | 100,000 | **760** | 505 | 197.8 | 0% |
-| **Improvement** | 111x fewer queries | same load profile | **2.1x faster p95** | 1.7x faster avg | 1.7x more throughput | 0% both runs |
+| **After** (`/api/orders/fixed`) | 1 | 100,000 | **696** | 469 | 212.9 | 0% |
+| **Improvement** | 111x fewer queries | same load profile | **2.3x faster p95** | 1.9x faster avg | 1.8x more throughput | 0% both runs |
 
 Query counts come from a Hibernate `StatementInspector` wired in `JpaConfig` (response header `X-Query-Count` and `/api/orders/stats/*`).
 
@@ -157,3 +157,13 @@ docker compose exec postgres psql -U perf -d perf_lab
 - PostgreSQL 16
 - Docker Compose (app + database)
 - k6 for load testing
+
+**Port note:** API listens on `:8080`. Stop other portfolio stacks (P3 rate limiter, P5 Go ledger) before running, or change the host port in `docker-compose.yml`.
+
+**Related:** Thin React ops admin on this API: [spring-ops-admin-lab](https://github.com/muhammadahmed-01/spring-ops-admin-lab)
+
+---
+
+## Proposal hook
+
+"I fixed this exact N+1 class at Careem (p99 ~8s to under 1s, 1,286 queries to 2 batch calls). This case study reproduces the investigation with measured k6 numbers you can run in Docker: https://github.com/muhammadahmed-01/spring-perf-rescue-lab"
