@@ -1,19 +1,19 @@
 # First 2 Hours Checklist: Real Client Performance Investigation
 
-Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to something demonstrated in `spring-perf-rescue-lab`.
+Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to something documented in `spring-perf-rescue-lab`.
 
 ---
 
 ## Hour 1: Symptom Capture and Baseline
 
-| Step | Action | Lab equivalent |
-|------|--------|----------------|
+| Step | Action | Case study equivalent |
+|------|--------|------------------------|
 | 1 | Record symptom: which endpoint, p95/p99, when it started, traffic level | README problem section: `GET /api/orders`, p95 134 ms |
-| 2 | Check recent deploys, config changes, migration scripts | Lab seeds fixed data; production needs deploy log |
+| 2 | Check recent deploys, config changes, migration scripts | Case study seeds fixed data; production needs deploy log |
 | 3 | Hit endpoint once with curl; note response time and payload size | `curl http://localhost:8080/api/orders/buggy` |
 | 4 | Capture response headers if app exposes query metrics | `X-Query-Count: 111` on buggy path |
 | 5 | Enable or request slow query log threshold (e.g. 100 ms) | `docs/explain-analyze.md` SQL section |
-| 6 | Turn on Hibernate statistics or JDBC proxy in staging | `StatementInspector` in lab (`SqlStatementCounter`) |
+| 6 | Turn on Hibernate statistics or JDBC proxy in staging | `StatementInspector` in case study (`SqlStatementCounter`) |
 
 **Output by end of hour 1:** One written baseline: endpoint URL, single-request latency, query count if available, screenshot or log snippet.
 
@@ -21,14 +21,14 @@ Use this on day one of a Spring Boot + PostgreSQL rescue. Each step maps to some
 
 ## Hour 2: One EXPLAIN and One Trace
 
-| Step | Action | Lab equivalent |
-|------|--------|----------------|
+| Step | Action | Case study equivalent |
+|------|--------|------------------------|
 | 7 | Identify the dominant SQL pattern (list + N lazy loads vs single JOIN) | `OrderQueryService.mapOrderWithLazyLoads` |
 | 8 | Run **one** `EXPLAIN (ANALYZE, BUFFERS)` on the worst repeating query | `docs/explain-analyze.md` Step 2: `order_items WHERE order_id = 1` |
 | 9 | Run **one** `EXPLAIN ANALYZE` on the ideal single-query shape | JOIN FETCH equivalent in `explain-analyze.md` |
-| 10 | If APM available (Datadog, New Relic, Grafana): open one slow trace | Lab uses k6 + `X-Query-Count` as lightweight APM |
+| 10 | If APM available (Datadog, New Relic, Grafana): open one slow trace | Case study uses k6 + `X-Query-Count` as lightweight APM |
 | 11 | Count SQL statements per request (stats endpoint, p6spy, or log grep) | `/api/orders/stats/buggy` returns `queryCount: 111` |
-| 12 | Draft P0 hypothesis: N+1, missing index, pool exhaustion, or external call | Lab P0: N+1 on lazy `items` and `user` |
+| 12 | Draft P0 hypothesis: N+1, missing index, pool exhaustion, or external call | Case study P0: N+1 on lazy `items` and `user` |
 
 **Output by end of hour 2:** Findings draft with one EXPLAIN plan pasted, query count before any fix, proposed P0 item.
 
@@ -65,14 +65,14 @@ Stop the ORM-only path and involve infra or platform when:
 | Geo latency, multi-region | Network, read replica lag | Infra team, CDN, routing |
 | Problem only under peak traffic | Autoscaling, rate limits, cache stampede | Load test + infra review |
 
-The lab intentionally isolates **ORM N+1** so you can recognize it fast. Production often mixes issues; this checklist gets you evidence before proposing a fix scope.
+This case study intentionally isolates **ORM N+1** so you can recognize it fast. Production often mixes issues; this checklist gets you evidence before proposing a fix scope.
 
 ---
 
-## Lab Mapping Summary
+## Case Study Mapping Summary
 
-| Real client step | Lab file / endpoint |
-|------------------|---------------------|
+| Real client step | Case study file / endpoint |
+|------------------|----------------------------|
 | Buggy hot path | `GET /api/orders/buggy` |
 | Fixed hot path | `GET /api/orders/fixed` |
 | Query count proof | `GET /api/orders/stats/*`, header `X-Query-Count` |

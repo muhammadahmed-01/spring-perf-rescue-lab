@@ -1,6 +1,6 @@
 # Performance Audit Report (Sample)
 
-**Client:** Demo E-commerce Orders API (portfolio lab)  
+**Client:** Sample E-commerce Orders API (reference implementation)  
 **Auditor:** Muhammad Ahmed  
 **Date:** June 16, 2026  
 **Scope:** GET `/api/orders` hot path, PostgreSQL query plan review
@@ -74,4 +74,4 @@ Replace client name, dates, and endpoint URLs before sending. Attach k6 summary 
 
 ---
 
-*Sample filled with portfolio lab measurements (Jun 16, 2026 re-run): 111 queries, p95 134 ms buggy; 1 query, p95 17 ms fixed. Re-run `scripts/capture-portfolio-assets.ps1` to refresh numbers.*
+*Sample filled with portfolio case study measurements (Jun 16, 2026 re-run): 111 queries, p95 134 ms buggy; 1 query, p95 17 ms fixed. Re-run `scripts/capture-portfolio-assets.ps1` to refresh numbers.*

@@ -15,7 +15,7 @@
     <artifactId>spring-perf-rescue-lab</artifactId>
     <version>1.0.0</version>
     <name>spring-perf-rescue-lab</name>
-    <description>Spring Boot N+1 query performance rescue lab</description>
+    <description>Spring Boot + PostgreSQL N+1 performance case study (reference implementation)</description>
 
     <properties>
         <java.version>17</java.version>

@@ -12,7 +12,7 @@ Use this file when uploading to Upwork, pinning on GitHub, or drafting LinkedIn 
 
 ## Upwork Portfolio Description (3 sentences)
 
-I built a reproducible performance lab that demonstrates a Hibernate N+1 failure on a Spring Boot orders API and the JOIN FETCH fix with measured before/after numbers. The demo runs in Docker: k6 load tests show p95 latency dropping from 134 ms to 17 ms while SQL round trips fall from 111 to 1 per request. It mirrors the same investigation process I used on a production ORM path at Careem (p99 8s to under 1s, 1,286 queries to 2 batch calls).
+I built a reproducible performance case study that documents a Hibernate N+1 failure on a Spring Boot orders API and the JOIN FETCH fix with measured before/after numbers. The reference implementation runs in Docker: k6 load tests show p95 latency dropping from 134 ms to 17 ms while SQL round trips fall from 111 to 1 per request. It mirrors the same investigation process I used on a production ORM path at Careem (p99 8s to under 1s, 1,286 queries to 2 batch calls).
 
 ---
 
@@ -40,19 +40,19 @@ Pin the repo and lead the README with the metrics table and the `docs/images/que
 - `docs/audit-report-template.md` (sample deliverable)
 - `PORTFOLIO-ASSETS.md` (this file)
 
-**Pin description (short):** Reproducible N+1 demo with k6 + EXPLAIN. 111 queries to 1, p95 134 ms to 17 ms.
+**Pin description (short):** Reproducible N+1 case study with k6 + EXPLAIN. 111 queries to 1, p95 134 ms to 17 ms.
 
 ---
 
 ## For Complex Projects (Positioning)
 
-Real client systems combine ORM issues with caching, connection pools, external APIs, and infra limits. This lab does not promise a single JOIN FETCH fixes every production incident. It proves a **repeatable audit process**: capture baseline query count, run one EXPLAIN, prioritize P0/P1/P2, ship a minimal fix, and re-measure on the same hardware. Phase 1 scope is defined in `docs/PHASE-1-AUDIT-SOW.md`. Careem-scale work used the same sequence at larger data and traffic; deeper distributed or infra problems are scoped as follow-on work.
+Real client systems combine ORM issues with caching, connection pools, external APIs, and infra limits. This case study does not promise a single JOIN FETCH fixes every production incident. It proves a **repeatable audit process**: capture baseline query count, run one EXPLAIN, prioritize P0/P1/P2, ship a minimal fix, and re-measure on the same hardware. Phase 1 scope is defined in `docs/PHASE-1-AUDIT-SOW.md`. Careem-scale work used the same sequence at larger data and traffic; deeper distributed or infra problems are scoped as follow-on work.
 
 ---
 
 ## LinkedIn Post Snippet
 
-Shipped a portfolio lab: Spring Boot + PostgreSQL N+1 from 111 SQL calls to 1, p95 134 ms to 17 ms. Docker + k6 + EXPLAIN, same audit flow I used in production. Repo link in comments.
+Shipped a portfolio case study: Spring Boot + PostgreSQL N+1 from 111 SQL calls to 1, p95 134 ms to 17 ms. Docker + k6 + EXPLAIN, same audit flow I used in production. Repo link in comments.
 
 ---
 

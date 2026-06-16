@@ -84,6 +84,6 @@ The audit is complete when:
 
 ## Sample Reference
 
-This SOW maps to the portfolio lab: `spring-perf-rescue-lab` (111 queries to 1, p95 134 ms to 17 ms on N+1 orders list). Production audits follow the same investigation path at larger scale.
+This SOW maps to the portfolio case study: `spring-perf-rescue-lab` (111 queries to 1, p95 134 ms to 17 ms on N+1 orders list). Production audits follow the same investigation path at larger scale.
 
-**Portfolio demo:** [spring-perf-rescue-lab](https://github.com/muhammadahmed-01/spring-perf-rescue-lab)
+**Portfolio reference:** [spring-perf-rescue-lab](https://github.com/muhammadahmed-01/spring-perf-rescue-lab)

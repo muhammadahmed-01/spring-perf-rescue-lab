@@ -1,8 +1,8 @@
-# Spring Boot + PostgreSQL Performance Rescue Lab
+# Spring Boot + PostgreSQL Performance Case Study
 
-Reproducible demo of a Hibernate N+1 SELECT failure and JOIN FETCH fix, with measured query counts, k6 p95 latency, and EXPLAIN ANALYZE walkthrough.
+Reproducible reference implementation of a Hibernate N+1 SELECT failure and JOIN FETCH fix, with measured query counts, k6 p95 latency, and EXPLAIN ANALYZE walkthrough.
 
-**Proposal hook:** I fixed the same N+1 class at Careem (p99 8s to under 1s, 1,286 to 2 queries). Lab reproduces it with EXPLAIN and p95 numbers: `https://github.com/muhammadahmed-01/spring-perf-rescue-lab` 
+**Proposal hook:** I fixed the same N+1 class at Careem (p99 8s to under 1s, 1,286 to 2 queries). This case study reproduces it with EXPLAIN and p95 numbers: `https://github.com/muhammadahmed-01/spring-perf-rescue-lab` 
 
 ---
 
@@ -61,7 +61,7 @@ List<Order> findAllOrdersWithItemsAndUser();
 | **JOIN FETCH** | Yes | One explicit query, easy to EXPLAIN, predictable for list endpoints |
 | @EntityGraph | No | Same SQL, but less visible in code review; harder to show in audit |
 | `default_batch_fetch_size` | No | Hides N+1 (drops to ~10 queries), bad for teaching the failure mode |
-| DTO projection | Good at scale | Overkill for this lab; JOIN FETCH is the minimal fix |
+| DTO projection | Good at scale | Overkill for this case study; JOIN FETCH is the minimal fix |
 
 **Endpoint:** `GET /api/orders/fixed`  
 **Measured:** `X-Query-Count: 1` for 100 orders
@@ -82,15 +82,15 @@ Query counts come from a Hibernate `StatementInspector` (response header `X-Quer
 
 ---
 
-## From lab to production
+## From case study to client production systems
 
-This repo is a **controlled demo**, not a copy of a client codebase. Production systems add connection pools, caches, read replicas, external APIs, and deploy history that can mask or multiply ORM issues.
+This repo is a **controlled reproduction of a production failure class**, not a copy of a client codebase. Production systems add connection pools, caches, read replicas, external APIs, and deploy history that can mask or multiply ORM issues.
 
-**What the lab proves:** A repeatable audit sequence (baseline query count, one EXPLAIN, prioritized fix, re-measure on same hardware).
+**What this case study proves:** A repeatable audit sequence (baseline query count, one EXPLAIN, prioritized fix, re-measure on same hardware).
 
 **What Phase 1 guarantees on real work:** One hot endpoint audited with measured evidence and a P0/P1/P2 report (`docs/PHASE-1-AUDIT-SOW.md`). Not a promise that every slow API is N+1.
 
-**Careem context:** Same pattern class at production scale (p99 8s to under 1s, 1,286 to 2 queries). See `docs/CAREEM-WAR-STORY.md` for facts vs lab mapping.
+**Careem context:** Same pattern class at production scale (p99 8s to under 1s, 1,286 to 2 queries). See `docs/CAREEM-WAR-STORY.md` for facts vs case study mapping.
 
 **Day-one checklist:** `docs/FIRST-2-HOURS-CHECKLIST.md`
 
@@ -195,4 +195,4 @@ docker compose exec postgres psql -U perf -d perf_lab
 
 ## Careem context
 
-Production fix at Careem: p99 8s to under 1s, 1,286 SQL queries to 2 batch calls on a similar ORM read path. This lab scales the pattern down to portfolio size with reproducible numbers.
+Production fix at Careem: p99 8s to under 1s, 1,286 SQL queries to 2 batch calls on a similar ORM read path. This case study scales the pattern down to portfolio size with reproducible numbers.
