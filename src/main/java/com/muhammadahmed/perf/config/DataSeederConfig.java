@@ -46,7 +46,10 @@ public class DataSeederConfig {
             int orderCounter = 0;
             for (User user : users) {
                 for (int o = 1; o <= seedProperties.ordersPerUser(); o++) {
-                    Order order = new Order(user, "PLACED", Instant.now().minusSeconds(orderCounter * 60L));
+                    Order order = new Order(
+                            user,
+                            statusFor(orderCounter),
+                            Instant.now().minusSeconds(orderCounter * 60L));
                     for (int i = 1; i <= seedProperties.itemsPerOrder(); i++) {
                         order.addItem(new OrderItem(
                                 "SKU-" + user.getId() + "-" + o + "-" + i,
@@ -63,6 +66,14 @@ public class DataSeederConfig {
                     users.size(),
                     orderCounter,
                     orderCounter * seedProperties.itemsPerOrder());
+        };
+    }
+
+    private static String statusFor(int orderCounter) {
+        return switch (orderCounter % 3) {
+            case 0 -> "PLACED";
+            case 1 -> "SHIPPED";
+            default -> "CANCELLED";
         };
     }
 

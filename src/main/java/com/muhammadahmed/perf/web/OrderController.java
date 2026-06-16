@@ -4,10 +4,13 @@ import com.muhammadahmed.perf.dto.OrderSummaryDto;
 import com.muhammadahmed.perf.dto.QueryStatsResponse;
 import com.muhammadahmed.perf.service.OrderQueryService;
 import com.muhammadahmed.perf.support.SqlStatementCounter;
+import java.time.LocalDate;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -40,6 +43,19 @@ public class OrderController {
     @GetMapping("/stats/fixed")
     public QueryStatsResponse statsFixed() {
         return orderQueryService.fetchOrdersFixed();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<OrderSummaryDto>> searchOrders(
+            @RequestParam(defaultValue = "fixed") String mode,
+            @RequestParam(required = false) String customer,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        String normalizedMode = "buggy".equalsIgnoreCase(mode) ? "buggy" : "fixed";
+        return okWithQueryCount(
+                normalizedMode,
+                orderQueryService.searchOrders(normalizedMode, customer, status, fromDate, toDate));
     }
 
     private ResponseEntity<List<OrderSummaryDto>> okWithQueryCount(String mode, List<OrderSummaryDto> orders) {

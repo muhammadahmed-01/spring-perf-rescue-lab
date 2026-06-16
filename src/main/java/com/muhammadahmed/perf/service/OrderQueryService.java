@@ -6,6 +6,9 @@ import com.muhammadahmed.perf.dto.QueryStatsResponse;
 import com.muhammadahmed.perf.repository.OrderRepository;
 import com.muhammadahmed.perf.support.SqlStatementCounter;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +48,49 @@ public class OrderQueryService {
     public List<OrderSummaryDto> listOrdersFixed() {
         sqlStatementCounter.reset();
         return loadFixedOrders();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderSummaryDto> searchOrders(
+            String mode, String customer, String status, LocalDate fromDate, LocalDate toDate) {
+        sqlStatementCounter.reset();
+        List<OrderSummaryDto> orders = "fixed".equalsIgnoreCase(mode) ? loadFixedOrders() : loadBuggyOrders();
+        return orders.stream()
+                .filter(order -> matchesCustomer(order, customer))
+                .filter(order -> matchesStatus(order, status))
+                .filter(order -> matchesFromDate(order, fromDate))
+                .filter(order -> matchesToDate(order, toDate))
+                .toList();
+    }
+
+    private boolean matchesCustomer(OrderSummaryDto order, String customer) {
+        if (customer == null || customer.isBlank()) {
+            return true;
+        }
+        return order.customerName().toLowerCase().contains(customer.toLowerCase());
+    }
+
+    private boolean matchesStatus(OrderSummaryDto order, String status) {
+        if (status == null || status.isBlank()) {
+            return true;
+        }
+        return status.equalsIgnoreCase(order.status());
+    }
+
+    private boolean matchesFromDate(OrderSummaryDto order, LocalDate fromDate) {
+        if (fromDate == null) {
+            return true;
+        }
+        Instant start = fromDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        return !order.createdAt().isBefore(start);
+    }
+
+    private boolean matchesToDate(OrderSummaryDto order, LocalDate toDate) {
+        if (toDate == null) {
+            return true;
+        }
+        Instant end = toDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        return order.createdAt().isBefore(end);
     }
 
     private List<OrderSummaryDto> loadBuggyOrders() {

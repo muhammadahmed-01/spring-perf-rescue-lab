@@ -146,6 +146,7 @@ docker compose exec postgres psql -U perf -d perf_lab
 | `GET /api/orders/fixed` | JOIN FETCH path, full JSON payload |
 | `GET /api/orders/stats/buggy` | Query count only (lightweight) |
 | `GET /api/orders/stats/fixed` | Query count only (lightweight) |
+| `GET /api/orders/search?mode=&customer=&status=&fromDate=&toDate=` | Filtered list (used by P4 admin) |
 | `GET /actuator/health` | Health check |
 
 ---
